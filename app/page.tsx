@@ -13,7 +13,7 @@ export default function Home() {
         Security engineer in Columbus, Ohio. I build production-grade tooling that real teams actually use.
       </h1>
       <p className="text-sm text-text-dark-dim leading-relaxed max-w-prose">
-        Multi-agent LLM pipelines for compliance. IOC enrichment for SOCs. Identity automation against CyberArk. AI-powered risk management. <span className="text-text-dark font-medium">Built with discipline</span> — every feature paired with a design doc, every doc paired with a commit.
+        Multi-agent LLM pipelines for compliance. IOC enrichment for SOCs. Identity automation against CyberArk. Risk management at scale. <span className="text-text-dark font-medium">Built with discipline</span> — every feature paired with a design doc, every doc paired with a commit.
       </p>
 
       <div className="mt-8 inline-block bg-bg-dark-panel border-l-2 border-accent-dark px-4 py-3 max-w-prose text-sm">
