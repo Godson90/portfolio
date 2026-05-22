@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Dark-surface palette (home, project headers, nav, /lab, /404) */
+  --color-bg-dark: #0d1117;
+  --color-bg-dark-panel: #161b22;
+  --color-border-dark: #1f2630;
+  --color-text-dark: #c9d1d9;
+  --color-text-dark-dim: #8b949e;
+  --color-text-dark-mute: #6e7681;
+  --color-accent-dark: #5ee2a2;
+
+  /* Reading-mode palette (case-study prose, /about body) */
+  --color-bg-light: #f6f1ea;
+  --color-bg-light-panel: #ece7de;
+  --color-border-light: #e8e3d8;
+  --color-text-light: #1a1a1a;
+  --color-text-light-dim: #555555;
+  --color-accent-light: #2d8a8a;
+
+  /* Typography */
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-serif: 'Charter', 'Iowan Old Style', 'Georgia', serif;
+
+  /* Container widths */
+  --container-prose: 38rem;
+  --container-wide: 64rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@layer base {
+  html { font-family: var(--font-mono); }
+  body { background-color: var(--color-bg-dark); color: var(--color-text-dark); }
+  a { color: var(--color-accent-dark); }
+  a:hover { text-decoration: underline; }
+  *:focus-visible { outline: 2px solid var(--color-accent-dark); outline-offset: 2px; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Reading-mode surface — applied via <section class="reading-mode"> on case-study prose */
+.reading-mode {
+  background-color: var(--color-bg-light);
+  color: var(--color-text-light);
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.75;
 }
+.reading-mode a { color: var(--color-accent-light); }
+.reading-mode h2 {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  font-weight: 400;
+}
+.reading-mode h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+.reading-mode code {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  background-color: var(--color-bg-light-panel);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}
+.reading-mode pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background-color: var(--color-bg-light-panel);
+  padding: 1rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+}
+.reading-mode p { margin-bottom: 1rem; }
+.reading-mode ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.reading-mode strong { font-weight: 600; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Cursor blink for terminal prompts */
+.cursor-blink { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
