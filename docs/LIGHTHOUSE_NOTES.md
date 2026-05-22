@@ -43,3 +43,13 @@ Two failing audits on `/`:
 npm run build && npm run start &
 npx lighthouse@latest http://localhost:3000/ --chrome-flags="--headless --no-sandbox" --quiet --only-categories=performance,accessibility,best-practices,seo
 ```
+
+## Re-run after a11y fixes (2026-05-22)
+
+After bumping `--color-text-dark-mute` contrast and adding underline to in-prose `/lab` link:
+
+| URL | Perf | A11y | BP | SEO |
+|---|---|---|---|---|
+| / | 97 | 100 | 100 | 100 |
+
+Remaining gap: Perf 91 → 95 on the home page (TBT 360ms, ~51 KiB unused JS, render-blocking). Address only if quick wins available; otherwise document as known and acceptable.

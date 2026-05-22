@@ -30,7 +30,7 @@ export default function Home() {
         ))}
         <p className="mt-6 text-xs text-text-dark-dim">
           Smaller tools and one-off scripts live in{' '}
-          <Link href="/lab" className="text-accent-dark">/lab</Link>.
+          <Link href="/lab" className="text-accent-dark underline underline-offset-2 decoration-accent-dark/40 hover:decoration-accent-dark">/lab</Link>.
         </p>
       </section>
     </main>
