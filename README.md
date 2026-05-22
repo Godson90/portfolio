@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# portfolio-website
 
-## Getting Started
+Personal portfolio site. Next.js 16 + Tailwind v4 + MDX, deployed on Vercel.
 
-First, run the development server:
+- Live: TBD (Vercel preview URL once connected)
+- Spec: `docs/superpowers/specs/2026-05-22-portfolio-website-design.md`
+- Plan: `docs/superpowers/plans/2026-05-22-portfolio-website.md`
+
+## Local dev
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quality gates
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run check:prose   # banned-language lint
+npm run test          # vitest
+npm run typecheck     # tsc --noEmit
+npm run build         # production build (runs check:prose first)
+```
 
-## Learn More
+## Going live
 
-To learn more about Next.js, take a look at the following resources:
+1. Create a new public (or private) GitHub repo via https://github.com/new — do NOT initialize with README/.gitignore/license.
+2. Add it as origin: `git remote add origin <url>` then `git branch -M main` then `git push -u origin main`.
+3. Connect via https://vercel.com/new — import the new GitHub repo; defaults are correct.
+4. (Later) point a custom domain at Vercel via Settings → Domains.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pre-launch checklist
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Replace `public/resume.pdf` placeholder with the real PDF.
+- [ ] Fill the four non-COMPASS case studies' Approach / Hard problems / Outcomes sections in `content/work/*.mdx`.
+- [ ] Update social link URLs in `app/about/page.tsx` (LinkedIn, GitHub, email).
+- [ ] Update `metadataBase` in `app/layout.tsx` to the real domain once chosen.
+- [ ] Update `BASE` in `app/sitemap.ts` to the real domain.
+- [ ] Re-run Lighthouse manually post-deploy to confirm scores hold on the Vercel preview URL.
