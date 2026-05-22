@@ -1,9 +1,11 @@
 import CompassDemo from '@/components/demos/compass'
+import RiskRegisterDemo from '@/components/demos/risk-register'
 
 interface Props { slug: string }
 
 const demos: Record<string, () => React.ReactElement> = {
   compass: () => <CompassDemo />,
+  'risk-register': () => <RiskRegisterDemo />,
 }
 
 export function DemoSlot({ slug }: Props) {
