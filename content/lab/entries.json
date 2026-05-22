@@ -1,0 +1,22 @@
+[
+  {
+    "year": 2024,
+    "name": "f5_decryptor",
+    "description": "F5 BIG-IP configuration / credential decryptor for IR engagements."
+  },
+  {
+    "year": 2024,
+    "name": "burp-extensions",
+    "description": "Custom Burp Suite extensions for in-house security testing workflows."
+  },
+  {
+    "year": 2023,
+    "name": "Phishing Email Analyzer / Triage",
+    "description": "Two scripts that parse Outlook PSTs for IOC extraction and triage routing."
+  },
+  {
+    "year": 2023,
+    "name": "Hybrid Analysis CLI wrapper",
+    "description": "Thin Python wrapper around Hybrid Analysis's REST API for batch sample lookups."
+  }
+]
