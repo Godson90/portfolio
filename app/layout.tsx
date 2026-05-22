@@ -4,13 +4,13 @@ import { SiteFooter } from '@/components/ui/SiteFooter'
 import './globals.css'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://godsonadeola.dev'),
-  title: { default: 'godsonadeola.dev', template: '%s · godsonadeola.dev' },
+  metadataBase: new URL('https://gabrieladeola.dev'),
+  title: { default: 'gabrieladeola.dev', template: '%s · gabrieladeola.dev' },
   description: 'Security engineer in Columbus, Ohio. I build production-grade tooling that real teams actually use.',
   openGraph: {
     type: 'website',
-    siteName: 'godsonadeola.dev',
-    title: 'godsonadeola.dev',
+    siteName: 'gabrieladeola.dev',
+    title: 'gabrieladeola.dev',
     description: 'Security engineer in Columbus, Ohio.',
   },
   twitter: { card: 'summary' },

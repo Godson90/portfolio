@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { listWork } from '@/lib/mdx'
 
-const BASE = 'https://godsonadeola.dev'
+const BASE = 'https://gabrieladeola.dev'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()

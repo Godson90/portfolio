@@ -5,7 +5,7 @@ export function SiteNav() {
     <nav className="border-b border-border-dark">
       <div className="max-w-wide mx-auto px-8 py-4 flex items-center gap-8 text-xs">
         <Link href="/" className="text-accent-dark font-semibold no-underline hover:no-underline">
-          <span className="text-text-dark-mute">~/</span>godsonadeola.dev
+          <span className="text-text-dark-mute">~/</span>gabrieladeola.dev
         </Link>
         <Link href="/work" className="text-text-dark no-underline hover:text-accent-dark">work</Link>
         <Link href="/lab" className="text-text-dark no-underline hover:text-accent-dark">lab</Link>
