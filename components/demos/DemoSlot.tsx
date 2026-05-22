@@ -1,6 +1,7 @@
 import CompassDemo from '@/components/demos/compass'
 import RiskRegisterDemo from '@/components/demos/risk-register'
 import MailIocDemo from '@/components/demos/mail-ioc-scanner'
+import EventPlannerDemo from '@/components/demos/event-planner'
 
 interface Props { slug: string }
 
@@ -8,6 +9,7 @@ const demos: Record<string, () => React.ReactElement> = {
   compass: () => <CompassDemo />,
   'risk-register': () => <RiskRegisterDemo />,
   'mail-ioc-scanner': () => <MailIocDemo />,
+  'event-planner': () => <EventPlannerDemo />,
 }
 
 export function DemoSlot({ slug }: Props) {
