@@ -2,19 +2,19 @@ import { describe, it, expect } from 'vitest'
 import { loadWork, listWork } from '@/lib/mdx'
 
 describe('loadWork', () => {
-  it('parses frontmatter from a known MDX file', () => {
-    const work = loadWork('_template')
-    expect(work.frontmatter.slug).toBe('_template')
-    expect(work.frontmatter.title).toBeDefined()
-    expect(work.frontmatter.catalogId).toBeDefined()
-    expect(work.body).toBeDefined()
+  it('parses frontmatter from compass.mdx', () => {
+    const work = loadWork('compass')
+    expect(work.frontmatter.slug).toBe('compass')
+    expect(work.frontmatter.catalogId).toBe('01')
+    expect(work.frontmatter.title).toContain('COMPASS')
+    expect(work.body.length).toBeGreaterThan(0)
   })
 })
 
 describe('listWork', () => {
-  it('returns at least the template entry sorted by catalogId', () => {
+  it('returns all five work entries sorted by catalogId', () => {
     const list = listWork()
-    expect(list.length).toBeGreaterThanOrEqual(1)
-    expect(list[0].frontmatter.slug).toBeDefined()
+    expect(list).toHaveLength(5)
+    expect(list.map((w) => w.frontmatter.catalogId)).toEqual(['01', '02', '03', '04', '05'])
   })
 })

@@ -1,0 +1,34 @@
+---
+slug: mail-ioc-scanner
+title: Mail IOC Scanner
+catalogId: "03"
+catalogTag: soc-tooling
+oneLiner: Microsoft Graph harvesting + VirusTotal / urlscan.io / AbuseIPDB enrichment for shared mailbox triage.
+year: 2025
+role: Solo engineer
+stack: [Python, Microsoft Graph API, VirusTotal API, urlscan.io API, AbuseIPDB API]
+demoComponent: mail-ioc-scanner
+---
+
+## Problem
+
+SOC teams triage shared phishing-report mailboxes by hand. The same indicators get re-checked across three vendor APIs every shift. I wanted a deterministic tool that walks a date-windowed mailbox, extracts indicators from message metadata, and batches them through enrichment APIs — no LLM, no flakiness.
+
+## Approach
+
+_Skeleton — fill iteratively post-v1._
+
+## Hard problems
+
+_Skeleton — fill iteratively post-v1._
+
+## Stack
+
+- Microsoft Graph for mailbox access (delegated permissions, shared mailbox scope)
+- VirusTotal v3, urlscan.io, AbuseIPDB clients
+- httpx with retry + rate-limit handling
+- No LLM, no agent — fully deterministic
+
+## Outcomes
+
+_Skeleton — fill iteratively post-v1._
