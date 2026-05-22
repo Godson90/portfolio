@@ -2,6 +2,7 @@ import CompassDemo from '@/components/demos/compass'
 import RiskRegisterDemo from '@/components/demos/risk-register'
 import MailIocDemo from '@/components/demos/mail-ioc-scanner'
 import EventPlannerDemo from '@/components/demos/event-planner'
+import CyberArkDemo from '@/components/demos/cyberark-sdk'
 
 interface Props { slug: string }
 
@@ -10,6 +11,7 @@ const demos: Record<string, () => React.ReactElement> = {
   'risk-register': () => <RiskRegisterDemo />,
   'mail-ioc-scanner': () => <MailIocDemo />,
   'event-planner': () => <EventPlannerDemo />,
+  'cyberark-sdk': () => <CyberArkDemo />,
 }
 
 export function DemoSlot({ slug }: Props) {
