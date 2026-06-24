@@ -27,6 +27,10 @@ export default function AboutPage() {
           <p className="mt-4 text-sm">
             <a href="/resume.pdf" className="font-mono">→ download resume.pdf</a>
           </p>
+          <p className="mt-2 text-sm">
+            <a href="/Adesola-Gabriel-Adeola-Portfolio.pdf" className="font-mono">→ download full portfolio.pdf</a>{' '}
+            <span className="text-text-light-mute text-xs">(about + every project, offline)</span>
+          </p>
         </article>
       </section>
     </main>

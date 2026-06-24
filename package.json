@@ -10,7 +10,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check:prose": "node scripts/check-prose.mjs"
+    "check:prose": "node scripts/check-prose.mjs",
+    "build:portfolio-pdf": "py scripts/build-portfolio-pdf.py"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

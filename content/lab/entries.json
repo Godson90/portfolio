@@ -1,22 +1,44 @@
 [
   {
-    "year": 2024,
-    "name": "f5_decryptor",
-    "description": "F5 BIG-IP configuration / credential decryptor for IR engagements."
+    "slug": "rag-it-support",
+    "year": 2025,
+    "name": "rag-it-support",
+    "description": "Internal generative-AI assistant for IT support on Retrieval Augmented Generation, with OWASP-LLM-aligned guardrails: prompt-injection prevention, data-leakage controls, secure-output enforcement."
   },
   {
+    "slug": "soar-playbooks",
+    "year": 2024,
+    "name": "soar-playbooks",
+    "description": "Sentinel + Logic Apps SOAR playbooks for data loss prevention, incident response, and identity protection. Block IPs, disable accounts, quarantine uploads, all from a single alert."
+  },
+  {
+    "slug": "onetrust-gitlab-bridge",
+    "year": 2024,
+    "name": "onetrust-gitlab-bridge",
+    "description": "Custom REST API integration between OneTrust (GRC) and GitLab (CI/CD) so security assessment reviews land alongside the code change instead of trailing behind a release."
+  },
+  {
+    "slug": "f5-decryptor",
+    "year": 2024,
+    "name": "f5-decryptor",
+    "description": "F5 BIG-IP configuration and credential decryptor. Built for an IR engagement where the device-level secrets were the only thread we had to pull."
+  },
+  {
+    "slug": "burp-extensions",
     "year": 2024,
     "name": "burp-extensions",
-    "description": "Custom Burp Suite extensions for in-house security testing workflows."
+    "description": "Custom Burp Suite extensions for in-house security testing workflows: a session-aware request replayer and a header-canonicalizer that turned three manual steps into one."
   },
   {
+    "slug": "phishing-pst-triage",
     "year": 2023,
-    "name": "Phishing Email Analyzer / Triage",
-    "description": "Two scripts that parse Outlook PSTs for IOC extraction and triage routing."
+    "name": "phishing-pst-triage",
+    "description": "Two scripts that parse Outlook PSTs for IOC extraction and triage routing. The first walks a PST and emits a normalized JSON; the second routes by score into the right SOC queue."
   },
   {
+    "slug": "hybrid-analysis-cli",
     "year": 2023,
-    "name": "Hybrid Analysis CLI wrapper",
-    "description": "Thin Python wrapper around Hybrid Analysis's REST API for batch sample lookups."
+    "name": "hybrid-analysis-cli",
+    "description": "Thin Python wrapper around the Hybrid Analysis REST API for batch lookups of suspected malware. Caches hashes, respects rate limits, returns one merged verdict per submission."
   }
 ]
