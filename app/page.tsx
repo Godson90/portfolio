@@ -10,16 +10,11 @@ export default function Home() {
         $ whoami<span className="cursor-blink text-accent-dark">▍</span>
       </div>
       <h1 className="text-3xl font-medium text-text-dark leading-tight mb-5 max-w-prose">
-        Security engineer in Columbus, Ohio. I build production-grade tooling that real teams actually use.
+        Security engineer in Columbus, Ohio. I run the day job — threat hunting, IAM, third-party risk assessment — and build the tooling that closes the gap between alert and action.
       </h1>
       <p className="text-sm text-text-dark-dim leading-relaxed max-w-prose">
-        Multi-agent LLM pipelines for compliance. IOC enrichment for SOCs. Identity automation against CyberArk. Risk management at scale. <span className="text-text-dark font-medium">Built with discipline</span> — every feature paired with a design doc, every doc paired with a commit.
+        Detection and threat hunting across EDR, DLP, identity, and cloud telemetry. IAM and PAM administration against CyberArk. Cloud security across AWS, Azure, and M365. Application security and OWASP guardrails — including the LLM top ten. Penetration testing and vulnerability assessment. Vendor and third-party risk assessment. And the tooling that ties it together: multi-agent LLM pipelines for compliance, IOC enrichment for SOCs, identity automation, and risk management at scale.
       </p>
-
-      <div className="mt-8 inline-block bg-bg-dark-panel border-l-2 border-accent-dark px-4 py-3 max-w-prose text-sm">
-        <span className="text-accent-dark text-[10px] uppercase tracking-widest font-semibold mr-3">currently</span>
-        Shipping COMPASS — a bi-weekly CIS assessment agent that turns thousands of CrowdStrike Falcon findings into one operator's minutes of review.
-      </div>
 
       <section className="mt-20 border-t border-border-dark pt-10">
         <div className="text-xs text-text-dark-mute tracking-widest uppercase mb-6">

@@ -16,20 +16,48 @@ Enterprise risk management is dominated by spreadsheet sprawl and once-a-year au
 
 ## Approach
 
-_Skeleton — fill iteratively post-v1._
+The model started as a state machine, not as a screen. A risk is a row with a lifecycle — `DRAFT → OPEN → UNDER_REVIEW → MITIGATING → CLOSED`, with side-doors for `ACCEPTED` and reopen — and everything the system does has to be expressible as a transition on that machine. The API enforces the transitions; the agents propose them; the operator confirms them. There is no path that lets an agent write a closed risk back to open without going through the same audit trail a human would.
+
+On top of that state machine sit four domain agents — Intake, Assessment, Monitoring, Mitigation — each implemented as a LangGraph `StateGraph` with named nodes for the discrete moves it knows how to make. A master Orchestrator routes intents into one of the four; an event bus moves signals between them so scoring changes can fan out to monitoring without modules reaching across the dependency graph. Celery Beat is the heartbeat: cadence checks every six hours, KRI polling hourly, integration polling every fifteen minutes, milestone slip detection daily, dashboard refresh every fifteen.
 
 ## Hard problems
 
-_Skeleton — fill iteratively post-v1._
+### LangGraph as a router, not a chatbot
+
+The temptation with agent frameworks is to let the model improvise — open-ended ReAct loops, tool-using agents that figure it out as they go. That's fine for prototypes and terrible for an audit-bearing system. The Orchestrator in this app is a router: it classifies the inbound intent into one of four domains and hands off to a `StateGraph` whose nodes are the only moves that exist. The Intake graph has exactly three nodes — SubmissionBot, AutoDetector, DuplicateFinder. The Assessment graph has three — RiskScorer, ControlLinker, TrendTracker. If the model wants to do something outside the graph, it can't. The shape of the workflow is enforced by the framework, not by the prompt.
+
+This decision paid for itself the first time the model tried to "helpfully" close a duplicate during intake. The graph had no edge from DuplicateFinder to status transitions, so the LLM's output was ignored and the duplicate surfaced as a link instead. Behavior I'd otherwise have had to discover in production was structurally impossible.
+
+### Duplicate detection that doesn't false-positive
+
+A risk register loses operators the moment it tells them their submission is a duplicate of something it isn't. Fuzzy string matching on titles fails on real intake — two genuinely distinct risks can share half their words, and two phrasings of the same risk can share almost none. So intake embeds the submission with `text-embedding-3-small`, runs a pgvector cosine search against open risks scoped to the same category, and only flags candidates above a calibrated threshold. Above the threshold the operator sees a side-by-side comparison and decides; below it, the risk goes through as new.
+
+The embedding dimension and similarity threshold are config values, not constants — both were tuned against a hand-labeled set of known duplicates and known near-misses before the feature shipped.
+
+### Cross-domain triggers without a god-object
+
+Risk scoring changes have to propagate. A risk dropping from CRITICAL to HIGH should trigger a reassessment of the review cadence; a milestone slipping should re-open the assessment to check whether the residual score still holds. The naive shape is one big service that knows everything; the result is a circular dependency between modules and tests that mock half the codebase.
+
+The fix was an in-process event bus. Each domain emits events — `RiskScoreChanged`, `MilestoneSlipped`, `ThresholdBreached` — and subscribes to the events it cares about. No module imports another module's service to call into it. Tests assert that domain X emits the right event for input Y; integration tests assert that the bus actually wires them up. Cross-domain behavior is composable instead of tangled.
+
+### Testing async, Postgres-specific code without standing up Postgres
+
+The whole API is async SQLAlchemy 2.0 against Postgres 16 + pgvector. The schema uses JSONB columns and a `Vector(1536)` column the embedding service depends on. Standing up a real Postgres for every test run is slow and flaky in CI; mocking the database hides exactly the bugs the tests are supposed to catch.
+
+The test harness uses SQLite in-memory with two compiler hooks: one that compiles JSONB to TEXT for storage and re-hydrates it as a dict on read, and one that compiles `Vector(n)` to a JSON-encoded array so similarity tests run against a pure-Python cosine. Result: the same models, the same services, the same factories — running in milliseconds against an in-process database. The integration tests that exercise pgvector's HNSW index do run against real Postgres in Docker, but those are a thin layer and the rest of the suite — agents, scoring, state transitions, event-bus wiring — runs without leaving the process.
 
 ## Stack
 
-- FastAPI for the API
-- LangGraph for the agent orchestration
-- Celery + Redis for scheduled monitoring jobs
-- Next.js for the operator UI
-- Postgres for persistence
+- **API**: FastAPI on Python 3.12, async SQLAlchemy 2.0, Pydantic 2
+- **Persistence**: Postgres 16 + pgvector; Alembic migrations
+- **Agents**: LangGraph `StateGraph` per domain, OpenAI `gpt-4o` for reasoning nodes, `text-embedding-3-small` for the duplicate-finder
+- **Scheduling**: Celery 5 + Redis 7 — worker for one-off agent runs, Beat for cadence/KRI/integration/milestone/dashboard jobs
+- **Frontend**: Next.js 16 + React 19, TanStack Query, React Hook Form + Zod, Tailwind 4, shadcn/ui, Recharts
+- **Integrations**: Qualys, Tenable, Jira, ServiceNow — HMAC-verified inbound webhooks plus periodic polling
+- **Infrastructure**: Docker Compose, structlog with request/agent correlation IDs, optional LangSmith tracing
 
 ## Outcomes
 
-_Skeleton — fill iteratively post-v1._
+The app runs end-to-end against a fleet's worth of synthetic risks: intake from an analyst form, intake from a scanner webhook, duplicate detection, scoring, control mapping, review-cadence enforcement, KRI threshold alerts, mitigation milestone tracking, and an executive dashboard that refreshes every fifteen minutes. Status transitions are state-machine-enforced from the API down; agents propose and operators confirm, never the other way around.
+
+What I want from this project is the same thing I want from every project on this site: a system whose hard parts are visible. The state machine is one decision. LangGraph as a router instead of a chatbot is another. The event bus over a god-object is a third. Testing async pgvector code against SQLite is a fourth. Each one started as a design document that named the problem before naming the solution — and each one is the answer to a question I could not have answered by writing the code first.

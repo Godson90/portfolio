@@ -18,11 +18,11 @@ export default function AboutPage() {
           <hr className="my-12 border-border-light" />
 
           <p className="text-base">
-            <a href="https://www.linkedin.com/" className="font-mono">LinkedIn ↗</a>
+            <a href="https://www.linkedin.com/in/adesola-adeola-5255841b7/" className="font-mono">LinkedIn ↗</a>
             {' · '}
-            <a href="https://github.com/" className="font-mono">GitHub ↗</a>
+            <a href="https://github.com/Godson90" className="font-mono">GitHub ↗</a>
             {' · '}
-            <a href="mailto:contact@example.com" className="font-mono">contact@example.com</a>
+            <a href="mailto:aadeola20@outlook.com" className="font-mono">aadeola20@outlook.com</a>
           </p>
           <p className="mt-4 text-sm">
             <a href="/resume.pdf" className="font-mono">→ download resume.pdf</a>

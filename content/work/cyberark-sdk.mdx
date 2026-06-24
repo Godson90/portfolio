@@ -16,18 +16,49 @@ CyberArk's REST API surface is broad, sparsely documented in the open, and not c
 
 ## Approach
 
-_Skeleton — fill iteratively post-v1._
+The SDK presents a single class, `CyberArkAccount`, that exposes the operations operators actually perform: retrieve a password, change it, verify it against the target, reconcile it, rotate SSH keys, generate a new password from the platform's complexity policy, and update account properties — address, port, database name, platform ID. Everything underneath that surface — which endpoint to call, which token to mint, which fallback to try when the primary path fails — is the SDK's problem, not the caller's.
+
+The transport layer is three concentric paths. First the Central Credential Provider (CCP) on the main site, an app-context HTTP service that returns a password against an `AppID` + `Safe` + `UserName` query with no user login required. If that fails, the DR-site CCP — same shape, different host, kept on hot standby. If both CCPs are unreachable, the SDK falls back to PVWA REST: an RSA-decrypted bootstrap secret on disk is used to log in directly against `/PasswordVault/api/auth/Cyberark/Logon`, and the resulting token authenticates the management calls. Most callers never know which path resolved their request. The audit log knows.
 
 ## Hard problems
 
-_Skeleton — fill iteratively post-v1._
+### Three different APIs hiding behind one product
+
+CyberArk's REST surface is not one tree. CCP is one service, with one auth model (an `AppID` string passed as a query parameter) and one response shape. PVWA REST is another service, with bearer tokens, different status codes for the same conditions, and pagination that's predictable in the documentation and inconsistent in practice. AIM Web Service is a third, vended as a CCP variant but with its own error envelope.
+
+The SDK's job is to hide that. Every public method on `CyberArkAccount` returns a single shape, even when its implementation routed through two services to get there. A `get_password` call hits CCP first and PVWA second; a `change_password` call hits PVWA's accounts API and emits a CCP cache-invalidation hint; an `update_platform_id` call walks PVWA's search endpoint to resolve the internal numeric ID before it can hit the update endpoint at all. The caller writes the same line either way.
+
+### Two-and-a-half-step failover that has to be invisible
+
+Enterprise CyberArk deployments run main and DR sites in active-passive. The naive failover — "try main, on exception try DR" — is also wrong, because some failures (a 429 rate-limit, an expired AppID) should propagate; some (a connection timeout, a 502 from the load balancer) should fall through.
+
+The `pvwa()` helper in `dr_testing.py` codifies the rule: CCP-main first, CCP-DR second, PVWA REST third — and only specific exception classes trigger fall-through. The SDK never silently swallows authentication errors, never retries on a 4xx that means the request was wrong, and never falls back if the operator explicitly forced a target. This is the difference between a wrapper that hides failure and one that hides infrastructure.
+
+### Mutations require search-then-act
+
+CyberArk's update endpoints take internal account IDs — opaque integers operators never see. Operators know their accounts by username, safe, and address. So every update method in the SDK runs a search against `/api/Accounts` first, filters the result set down to one match using a custom `postFilter` class, validates uniqueness, and only then issues the PATCH.
+
+The filter is not an optimization. The accounts API paginates inconsistently and supports server-side filtering only on a subset of fields; client-side filtering by `(username, safe, address, database)` is the only way to guarantee uniqueness across all account types. The SDK refuses to mutate if zero matches or more than one match come back — better to fail loud than rotate the wrong credential.
+
+### Encryption in transit and at rest, even in memory
+
+The corporate constraint was that secrets retrieved from the vault must not exist as plaintext Python strings any longer than the call that consumed them. So every CCP response is Fernet-encrypted the moment it leaves the HTTPS socket — a fresh key is minted per request, the ciphertext is held in the SDK, the plaintext is decrypted only inside the method that returns it to the caller. The bootstrap PVWA secret on disk is itself RSA-encrypted (`rsa_decrypt_from_files()`), so even a developer with read access to the SDK's working directory cannot recover the master credential without the private key.
+
+This is paranoid. It is also the rule for any tool that touches the privileged-access vault in production. The SDK ships with the discipline pre-applied so callers don't have to remember it.
 
 ## Stack
 
-- Python requests
-- CyberArk REST API
-- Token-based auth with automatic refresh
+- **Language**: Python 3.9+
+- **Transport**: `requests` against PVWA REST + AIM Web Service (CCP); `urllib3` warnings suppressed because corporate-CA-signed endpoints are validated out-of-band
+- **Auth**: CyberArk Cyberark Logon flow with `concurrentSession=True`; token reuse within a method, no shared mutable state between calls
+- **Failover**: CCP main → CCP DR → PVWA REST, with exception-class gating
+- **Crypto**: `cryptography` library (Fernet for in-memory secrets, RSA for the on-disk bootstrap credential)
+- **Validation**: per-argument regex + type checks in `input_validate.py` and inline at every public method boundary
+- **Filtering**: custom `postFilter` and `database_post_filter` for client-side narrowing of paginated PVWA results
+- **Audit**: every credential retrieval injects a `Reason` string into the CCP request; every PVWA mutation logs the resolved account ID and the requesting cloud ID
 
 ## Outcomes
 
-_Skeleton — fill iteratively post-v1._
+The SDK is the foundation for every in-house CyberArk automation that doesn't go through the GUI — bulk reconciliation runs, scheduled password rotations on managed service accounts, address updates after a server migration, platform-ID corrections after a Safe restructure, SSH key retrieval for jump-host workflows. Operations that used to be hand-run through the PVWA web console one account at a time are now a Python script over a CSV.
+
+What I want from this on the site is the part the demo can't show. A REST wrapper is not interesting; a REST wrapper that survives a DR failover during a Friday rotation while the operator is at lunch is interesting. The SDK is small. The discipline is not.

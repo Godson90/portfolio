@@ -16,19 +16,46 @@ Most agent-framework demos are command-line scripts. I wanted a small but real w
 
 ## Approach
 
-_Skeleton — fill iteratively post-v1._
+The crew has four agents — Venue Coordinator, Logistics Manager, Marketing & Communication, and Vendor Outreach — each defined in YAML with a role, a goal, and a backstory that pins the agent to the variables it's allowed to use. The crew runs with CrewAI's shared memory turned on so an agent's output is available to every agent that runs after it. Input is a single dictionary — topic, description, city, date, participants, budget, venue type — and output is a Markdown event plan rendered to HTML for the web, or compiled to DOCX and PDF for download.
+
+There are two surfaces over the same core. A Rich-prompted CLI was the first interface and is still the simplest way to run a plan locally; a Flask web layer wraps the same `initialize_crew` and `run_event_crew` functions and adds login, async execution, and a thirty-day event history. Both paths produce the same Markdown artifact from the same agents.
 
 ## Hard problems
 
-_Skeleton — fill iteratively post-v1._
+### Constraint-anchored prompts to keep agents from improvising
+
+The default failure mode for an agent system is the model "helpfully" inventing details — a venue that doesn't exist, a caterer whose website is fabricated, a contact phone number that resolves nowhere. CrewAI gives the model enough freedom that this happens easily.
+
+The fix lives in the YAML. Every agent's backstory ends with an explicit constraint clause: *operate as a CrewAI agent under strict collaboration protocols — all suggestions must be data-driven, verified, and cross-checked with the given variables — do not hallucinate or assume details not in the provided inputs.* The Vendor Outreach agent's constraint is stricter still — only contact details verifiable via web search, never fabricated phone numbers or emails. This is not a prompt-engineering flourish; it's the structural difference between a demo that looks impressive and an output an operator can act on. Pairing it with the Serper-backed search tool gives the agent a source of truth it can cite instead of paraphrase.
+
+### Long-running agent runs over a request/response transport
+
+A four-agent crew with `verbose=True` and shared memory takes one to three minutes to produce a plan. Flask's default request lifecycle is not that. The naive shape — submit form, wait synchronously, render — yields proxy timeouts in production and an unresponsive UI in dev.
+
+So the web layer puts the crew run on a background thread the moment the POST lands, returns a task ID immediately, and exposes a `/api/status/<task_id>` endpoint the frontend polls. The browser-side UI shows a progress indicator until the task finishes; the result, once written, is served by `/api/download/<task_id>`. The same task ID is the key used by the thirty-day history store, so a plan run today is recoverable by URL tomorrow. There's no Celery and no Redis here — the workload is bounded and personal, so threading plus an in-process task table is exactly enough.
+
+### Markdown as the agent contract
+
+The crew emits Markdown. The web UI needs HTML. Some users want a DOCX they can edit; others want a PDF they can email. The temptation is to ask the agents for whichever format the user picked — and immediately discover that agent outputs in HTML drift toward verbose tag soup, and outputs targeted at DOCX or PDF lose structure entirely.
+
+The crew always returns Markdown. Conversion happens after. A small `markdown_to_html` helper renders the web view; `document_generator` compiles DOCX and PDF from the same source. Markdown is the only contract the agents need to honor, and rendering is a downstream concern the agents never see. The cost is one extra conversion step per output; the benefit is that agent prompts never have to talk about formatting at all.
+
+### One core, two surfaces
+
+The CLI came first, with Rich-prompted input and Markdown panels in the terminal. The web app wraps that core — `initialize_crew()` returns the same `Crew` object, `run_event_crew()` runs the same flow, `validate_event_details()` enforces the same required-field set. The web layer adds session auth, async dispatch, history, and three output formats; it does not re-implement the planning. Adding an interface — a desktop wrapper, a Slack bot, a scheduled job — would mean wrapping the same two functions again.
 
 ## Stack
 
-- CrewAI for agent collaboration
-- Flask for the web layer
-- OpenAI API as the underlying LLM
-- Simple browser-based UI
+- **Framework**: CrewAI with `memory=True` and `verbose=True`; OpenAI as the underlying model (configurable, defaults to `gpt-4o-mini`)
+- **Agents**: Venue Coordinator, Logistics Manager, Marketing & Communication, Vendor Outreach — declared in `config/agents.yaml`, instantiated in Python
+- **Tools**: Serper-backed web search wrapper, custom sentiment helper
+- **Web**: Flask with session auth, bcrypt-hashed credentials, threaded task dispatch, polling status endpoint
+- **CLI**: Rich for prompts, panels, and Markdown rendering
+- **Output**: Markdown source; `markdown_to_html` for the web view; DOCX and PDF via `document_generator`
+- **Storage**: JSON file store for thirty-day event history with auto-cleanup
 
 ## Outcomes
 
-_Skeleton — fill iteratively post-v1._
+The app plans end-to-end against the inputs it was built for — a city, a date, a participant count, a budget, a venue type. The crew returns a Markdown plan in one to three minutes; the operator gets a venue recommendation, a logistics outline, a marketing brief, and a vendor list with contact details the agent claims it verified. The constraint clauses in the YAML are the difference between that output being acted on and being rewritten by hand.
+
+The point of this project on the site is not the event plans. It's the contrast with COMPASS. COMPASS is bespoke orchestration — every transition between stages is code I wrote and own. Event Planner is CrewAI orchestration — every transition is the framework's. Both ship. The choice between them is not about which is better; it's about which one earns the discipline a given problem demands. Building this one is how I know.
