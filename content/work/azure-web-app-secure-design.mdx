@@ -1,0 +1,81 @@
+---
+slug: azure-web-app-secure-design
+title: Azure Web App Secure Design
+catalogId: "06"
+catalogTag: cloud-security
+oneLiner: Defense-in-depth secure architecture and remediation plan for six critical risk domains on Azure App Service.
+year: 2025
+role: Solo architect
+stack: [Azure Front Door, Application Gateway WAF v2, Azure App Service, Azure Key Vault, Microsoft Entra ID, Microsoft Defender, Microsoft Sentinel, Azure DevOps]
+demoComponent: azure-web-app-secure-design
+---
+
+## Problem
+
+A web tier on Azure has six places it can fail at the same time: the edge, the secrets, the uploads, the network capacity, the access map, and the detection seam. Each one has a vendor doc, an ARM template, and a Microsoft Learn article. None of them are a security design. A design is the shape that says where each control belongs, what it protects against, what it leaves uncovered, and how the gaps get closed.
+
+This is that design — captured as an 18-slide deck I prepared and walked stakeholders through end to end.
+
+## Approach
+
+The architecture is edge-to-data defense in depth. Identity gates the top, secrets feed the app from the side, and monitoring, DevSecOps, and governance are always-on across the stack. User traffic enters through Azure Front Door (WAF, DDoS, bot protection), hits a regional Application Gateway WAF v2 (OWASP CRS, TLS termination), reaches the App Service web tier (Managed Identity, Private Endpoints, NSGs), and resolves against a data tier of Azure SQL with TDE + Always Encrypted and Defender-watched Storage. Secrets sit out of band in Key Vault and Managed HSM with soft-delete + purge protection and auto-rotation; the app never carries one.
+
+The remediation plan is organized as six risk domains. Each domain names its risks, its Azure controls, and the implementation steps. The deck closes with two deep-dives — programmatic secret retrieval via Managed Identity (no creds in code or config), and a data-at-rest encryption model that pairs service-managed TDE with the compensating controls TDE alone cannot provide — plus a DevSecOps pipeline that wires SAST, SCA, IaC scan, container image scan, and DAST into Azure DevOps as gates instead of suggestions.
+
+## The six risk domains
+
+### 1. Application and network attacks
+
+OWASP Top 10, SQLi, XSS, RCE, Layer-7 floods, malicious bots. Controlled by Azure Front Door or Cloudflare at the edge (WAF, bot protection, HTTPS-only, TLS 1.2+, rate limiting), Application Gateway WAF v2 with the OWASP CRS plus custom rules, Network Security Groups, Azure Firewall for egress, and Private Endpoints with public access disabled. Content Security Policy restricts allowed content sources so uploaded files cannot execute.
+
+### 2. Exposure of API keys, certificates, connection strings, and passwords
+
+Hardcoded secrets, credential leakage, compromised repos, leaked-key privilege escalation, long-lived static credentials. Controlled by Azure Key Vault and Managed HSM, Managed Identities replacing every embedded credential, Azure RBAC scoped to least privilege, Just-in-Time access to vaults, secret scanning + push protection in CI/CD via GitHub Advanced Security and Defender for DevOps, and automatic rotation policies for certificates and credentials.
+
+The deep-dive: the developer pattern. The app requests a token at the Managed Identity endpoint (no secrets in code), Entra ID issues an OAuth bearer token scoped to `https://vault.azure.net`, the app calls Key Vault's REST API with the bearer token, and the vault enforces RBAC and returns the secret with the access logged. Surface forms include the raw REST call, the `SecretClient + DefaultAzureCredential` SDK, and the zero-code App Service Key Vault reference (`@Microsoft.KeyVault(SecretUri=...)`).
+
+### 3. Insecure file uploads
+
+Malware, web shells, ransomware staging, ZIP bombs, MIME and extension spoofing. Controlled by file type, MIME, and signature validation, antivirus and sandbox scanning, Content Disarm and Reconstruction, private Blob containers with no anonymous access, short-lived SAS tokens, immutable storage where it fits, and Microsoft Defender for Storage doing malware scanning at the storage tier. Allow list (PDF, DOCX, XLSX, JPG, PNG); block EXE, JS, BAT, DLL, PS1. Uploads stored outside the web root with executable permissions removed.
+
+### 4. Denial-of-service and DDoS
+
+Service outages, resource exhaustion, API abuse, Layer-7 floods bypassing L3/L4 defenses, burst traffic against unscaled tiers. Controlled by Azure Front Door for global edge filtering and L3/L4 mitigation, Azure DDoS Protection Standard on VNets and public endpoints, WAF rate limiting per IP and per API (for example 100 req/min per IP with API-specific thresholds), CDN caching for static and public content, App Service autoscaling tied to CPU, memory, and request thresholds, and multi-region failover.
+
+### 5. Excessive developer and admin privileges
+
+Insider threats, accidental misuse, privilege escalation via standing admin roles, unauthorized production changes. Controlled by Microsoft Entra ID as central identity, Privileged Identity Management with approval workflows and time-bound elevation, Conditional Access policies including MFA, compliant devices, and geographic restrictions, least-privilege RBAC separating developers, admins, security, and DevOps, removal of all standing admin access in favor of JIT + monitored break-glass accounts, and continuous audit of role assignments, failed logins, and privileged operations.
+
+### 6. Insufficient detection and incident response
+
+Delayed breach detection, undetected lateral movement, no incident visibility across services, compliance and audit failure, slow manual response. Controlled by Microsoft Sentinel as SIEM + SOAR, Defender for Cloud (CSPM and workload), Defender for App Service / Storage / SQL, Azure Monitor + Log Analytics, diagnostic settings on every sensitive service, and Logic Apps automating response playbooks (block IP, disable account, quarantine upload). Detection rules cover impossible travel, failed-login bursts, suspicious API calls, WAF anomalies, and Key Vault access anomalies.
+
+## Data-at-rest encryption — design decision
+
+Baseline: service-managed Transparent Data Encryption on Azure SQL — AES-256, on by default, Microsoft-managed protector with automatic rotation, covering data files, transaction log, and backups, inherited by geo-replicas and failover groups, transparent to the application. TDE alone does not cover authenticated SQL access with compromised credentials, application-tier compromise reading through legitimate connections, in-memory data once loaded into the buffer pool, or column-level confidentiality for PII, PCI, or credential data. Compensating controls: Microsoft Entra authentication for SQL, least-privilege SQL RBAC, Private Endpoints (no public network access), Defender for SQL threat detection, auditing streamed to Log Analytics and Sentinel, Always Encrypted for sensitive columns, Dynamic Data Masking on read paths, and Managed Identity for app-to-SQL access.
+
+## DevSecOps gates
+
+Deployments flow through Azure DevOps pipelines with security wired into every stage, SAST shifted left into the PR build and DAST anchoring the staging deploy. Stages: (1) commit — secret scan with push protection; (2) PR build — SAST, SCA, IaC scan with inline PR decoration; (3) build and test — unit tests and container image scan; (4) stage deploy — DAST scan and API security test; (5) prod deploy — runtime protection by Defender for App Service. SAST runs SonarCloud and Microsoft Security DevOps, with branch policy blocking merge on Critical / High findings. DAST runs OWASP ZAP via native Azure DevOps task plus Burp Suite Enterprise for richer coverage, triggered after stage deploy and blocking promotion to production on Critical findings.
+
+## Framework alignment
+
+The design satisfies the controls expected by every major web application security and cloud governance framework: **OWASP Top 10** (WAF rules, input validation, secure auth, logging), **Zero Trust Architecture** (verify explicitly, least privilege, assume breach), **CIS Azure Foundations Benchmark** (identity, network, logging, data baselines), **NIST Cybersecurity Framework** (Identify, Protect, Detect, Respond, Recover), **ISO/IEC 27001** (ISMS controls for access, ops, and incident management), and the **Microsoft Cloud Security Benchmark** as Microsoft's prescriptive Azure baseline.
+
+## Stack
+
+- **Edge:** Azure Front Door Premium / Cloudflare — WAF, DDoS, bot protection, rate limiting
+- **Regional WAF:** Application Gateway WAF v2 with OWASP CRS
+- **Web tier:** Azure App Service with Managed Identity, Private Endpoints, NSGs
+- **Data tier:** Azure SQL (TDE + Always Encrypted), Azure Storage with Defender for Storage
+- **Identity:** Microsoft Entra ID, Conditional Access, PIM, Managed Identity
+- **Secrets:** Azure Key Vault + Managed HSM, soft-delete and purge protection, auto-rotation
+- **Monitoring:** Microsoft Sentinel, Defender for Cloud, Defender for SQL / Storage / App Service, Log Analytics, Logic Apps for SOAR
+- **DevSecOps:** Azure DevOps, Microsoft Security DevOps, SonarCloud, OWASP ZAP, Burp Suite Enterprise, GitHub Advanced Security
+- **Governance:** Azure Policy, Landing Zones, Microsoft Cloud Security Benchmark, Defender CSPM
+
+## Outcomes
+
+What good looks like, in five lines: defense in depth — Front Door, WAF, NSGs, Private Endpoints, Managed Identities, no single failure point. Secrets in Key Vault — Managed Identities replace embedded credentials across the stack. Detection and response — Sentinel + Defender for Cloud with Logic Apps automating containment. Least privilege, JIT — Entra ID, PIM, Conditional Access, MFA, no standing admin. DevSecOps gates — SAST and DAST in every Azure DevOps build, vulnerabilities caught before they ship.
+
+The deck itself is the artifact: a single document a stakeholder can read and a sequence an engineer can implement against, mapped to controls every auditor recognizes. [Download the presentation.](/Azure_Web_App_Secure_Design_Presentation.pptx)

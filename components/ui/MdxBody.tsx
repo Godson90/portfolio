@@ -8,6 +8,7 @@ const loaderMap: Record<string, () => Promise<MdxModule>> = {
   'mail-ioc-scanner': () => import('@/content/work/mail-ioc-scanner.mdx'),
   'event-planner':    () => import('@/content/work/event-planner.mdx'),
   'cyberark-sdk':     () => import('@/content/work/cyberark-sdk.mdx'),
+  'azure-web-app-secure-design': () => import('@/content/work/azure-web-app-secure-design.mdx'),
 }
 
 export async function MdxBody({ slug }: { slug: string }) {

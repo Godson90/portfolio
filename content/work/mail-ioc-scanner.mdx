@@ -16,11 +16,27 @@ SOC teams triage shared phishing-report mailboxes by hand. The same indicators g
 
 ## Approach
 
-_Skeleton — fill iteratively post-v1._
+The tool runs as a CLI against a shared mailbox the SOC monitors for phishing reports. Inputs are simple: a mailbox address, a date window, and a path to write the report to. Outputs are an HTML triage report and a CSV that mirrors it, both produced from the same in-memory artifact.
+
+The pipeline has four stages. First, harvest — Microsoft Graph fetches messages in the window using delegated app permissions scoped to the shared mailbox; pagination, throttling, and the `$batch` endpoint are handled by a thin Graph client. Second, extract — each message is parsed for indicators: sender address, sender IP from `Authentication-Results` and `Received` headers, URLs in the HTML body (defanged forms re-fanged, redirectors unwrapped where the source is known), attachment SHA-256 hashes, and the domains/IPs the URLs resolve to. Third, dedupe — indicators are normalized and de-duplicated across the entire window so each one is enriched once, not once per message that contained it. Fourth, enrich — each indicator class is routed to the right API: file hashes to VirusTotal, URLs to VirusTotal and urlscan.io, IPs to VirusTotal and AbuseIPDB, domains to VirusTotal. Results are merged into a single record per indicator, then re-joined back to the messages that contained them.
+
+No LLM is in the path. No agent decides anything. The deterministic shape is the feature.
 
 ## Hard problems
 
-_Skeleton — fill iteratively post-v1._
+### Three APIs, three rate-limit models, one report
+
+VirusTotal, urlscan.io, and AbuseIPDB each rate-limit differently — VirusTotal as a per-minute and per-day quota with separate buckets for paid and community keys, urlscan.io as a per-minute submission cap, AbuseIPDB as a per-day check limit and a separate per-day report quota. A naive loop that fires requests as it finds indicators trips one limit, gets throttled, and silently corrupts the report.
+
+The fix is a per-API client wrapper that owns the budget. Each wrapper exposes a `submit` method that queues the request, respects the cooldown, surfaces 429s as backoff signals rather than failures, and emits a structured log line for every consumed unit. The orchestrator queries the budget before scheduling, prioritizes the indicators most likely to be malicious (matched by a static heuristic on URL/IP class), and falls back to "unenriched" with a tag rather than failing the run.
+
+### IOC extraction from real email is not regex
+
+Phishing emails defang URLs (`hxxps://`, `[.]`), wrap them in tracking redirectors, and sometimes hide them in image hyperlinks or in the `href` of a misleading anchor. Naive regex pulls the visible text and misses the actual destination. The extractor uses a parsed-DOM walker for HTML bodies, normalizes defanged forms before extraction, and follows known-safe redirectors (one HEAD hop, no recursion, time-boxed) to recover the real destination. Indicators recovered this way are tagged with their extraction path so the operator can see what the tool did and did not trust.
+
+### Determinism without losing context
+
+Operators rerun the same window after new IOCs surface; the report has to give the same answer or explain why it did not. Every Graph fetch, every API call, and every extraction step writes to a content-addressed cache keyed by the input. A rerun against the same window pulls from cache and is byte-for-byte identical unless the operator passes `--refresh-enrichment`. New indicators discovered in the window produce a new report; previously-seen indicators surface their cached verdict with a freshness timestamp so nothing in the report looks newer than it is.
 
 ## Stack
 
@@ -31,4 +47,6 @@ _Skeleton — fill iteratively post-v1._
 
 ## Outcomes
 
-_Skeleton — fill iteratively post-v1._
+Walks a 24-hour window over a high-volume phishing-report mailbox in a few minutes, deduplicates several hundred raw indicators to a few dozen unique ones, and produces an HTML report the on-call analyst can sort, filter, and pivot from. The same in-memory artifact backs a CSV for tabulation and a JSON for downstream ingestion into the SIEM enrichment store.
+
+The reason this tool is deterministic and not agentic is the same reason it earns its place in the shift handoff: the operator needs to know that the report tomorrow will agree with the report today on the indicators that did not change. An LLM-mediated tool cannot promise that. This one can.

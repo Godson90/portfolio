@@ -3,6 +3,7 @@ import RiskRegisterDemo from '@/components/demos/risk-register'
 import MailIocDemo from '@/components/demos/mail-ioc-scanner'
 import EventPlannerDemo from '@/components/demos/event-planner'
 import CyberArkDemo from '@/components/demos/cyberark-sdk'
+import AzureSecureDesignDemo from '@/components/demos/azure-web-app-secure-design'
 
 interface Props { slug: string }
 
@@ -12,6 +13,7 @@ const demos: Record<string, () => React.ReactElement> = {
   'mail-ioc-scanner': () => <MailIocDemo />,
   'event-planner': () => <EventPlannerDemo />,
   'cyberark-sdk': () => <CyberArkDemo />,
+  'azure-web-app-secure-design': () => <AzureSecureDesignDemo />,
 }
 
 export function DemoSlot({ slug }: Props) {
