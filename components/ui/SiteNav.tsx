@@ -11,7 +11,7 @@ export function SiteNav() {
         <Link href="/lab" className="text-text-dark no-underline hover:text-accent-dark">lab</Link>
         <Link href="/about" className="text-text-dark no-underline hover:text-accent-dark">about</Link>
         <a
-          href="mailto:contact@example.com"
+          href="mailto:aadeola20@outlook.com"
           className="ml-auto text-accent-dark no-underline hover:underline"
         >
           contact →

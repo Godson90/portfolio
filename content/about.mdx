@@ -6,26 +6,42 @@ title: About
 
 Security engineer. Columbus, Ohio.
 
-Five-plus years of hands-on work in enterprise security across cloud, on-prem, and corporate IT. The day job is threat hunting, IAM and PAM administration, third-party risk reviews, and audit-evidence collection. Around that, I build the tooling that closes the gap between alert and action. None of it is a demo. It runs.
+Five-plus years of hands-on work in enterprise security across cloud, on-prem, and corporate IT. The day job is threat hunting, incident response, IAM and PAM administration, third-party risk reviews, and audit-evidence collection. Around that, I build the internal apps and workflow scripts that close the gap between alert and action. None of it is a demo. It runs.
 
-### Path here
+### **Path here**
 
-Bachelor of Technology in Chemical Engineering from Ladoke Akintola University of Technology in Nigeria, then IT technical support at Globacom Telecommunication in Lagos. Moved to Ohio, worked five years as a Direct Support Professional while studying cybersecurity. Associate's at Columbus State, B.S. Cybersecurity and Information Assurance from Western Governors University. The non-linear part is the most honest part.
+Bachelor of Technology in Chemical Engineering from Ladoke Akintola University of Technology in Nigeria, then IT technical support at Globacom Telecommunication in Lagos. Moved to Ohio, worked five years as a Direct Support Professional while studying cybersecurity. Associate's at Columbus State Community College, B.S. Cybersecurity and Information Assurance from Western Governors University. The non-linear part is the most honest part.
 
-### Currently
+### **Currently**
 
 Security Engineer at STRS Ohio since December 2021. Shipping COMPASS, a bi-weekly CIS assessment agent that turns thousands of CrowdStrike Falcon findings into one operator's minutes of review.
 
-### Stack
+### **Cloud security**
+
+A large share of the security work I do has a cloud edge. On Azure, that means securing App Service web apps end to end: managed identities instead of stored credentials, Key Vault references for secrets, private endpoints and access restrictions on the network side, App Service authentication wired in front, RBAC scoped to least privilege, and Defender for App Service for runtime signal. On AWS, that means IAM that does not over-grant, S3 hardening (public-access block, default encryption, access points where they help), KMS-managed keys for data at rest, Security Hub and GuardDuty for cross-account visibility, and CloudTrail piped into the SIEM so audits do not have to be reconstructed after the fact. Detection telemetry from both clouds feeds the same threat-hunting workflow.
+
+### **Agentic AI and LLM security**
+
+Increasingly the tooling is agentic. I build with Claude Code, OpenAI Codex, and Microsoft Copilot Studio on top of LangGraph and CrewAI for orchestration, RAG over pgvector for grounding, and a verifier pass for anything an operator will act on. The security side is not optional: every LLM surface gets OWASP LLM Top Ten guardrails before it ships, including prompt-injection prevention, data-leakage controls, sensitive-information disclosure checks, and secure-output enforcement. Agents propose, operators confirm. The model never closes the loop alone.
+
+### **Stack**
 
 - **Languages:** Python, PowerShell, Go, TypeScript, SQL
 - **Frameworks:** FastAPI, Next.js, LangGraph, CrewAI, Flask
 - **Storage and infra:** Postgres + pgvector, Docker, Celery + Redis, Alembic
-- **Security:** EDR, DLP, SIEM, CyberArk PAM, MITRE ATT&CK, OWASP Top 10 (incl. the LLM top ten)
-- **Cloud:** AWS, Azure, Microsoft 365
+- **Agentic AI / LLM dev:** Claude Code, OpenAI Codex, Microsoft Copilot Studio, LangGraph, CrewAI, OpenAI SDK, RAG with pgvector
+- **AI security:** OWASP LLM Top Ten, prompt-injection prevention, data-leakage controls, secure-output enforcement, verifier-gated narratives
+- **Security:** EDR, DLP, SIEM, CyberArk PAM, MITRE ATT&CK, OWASP Top 10
+- **Cloud:** AWS (IAM, S3, KMS, CloudTrail, GuardDuty, Security Hub, Secrets Manager), Azure (App Service, Key Vault, Managed Identities, Defender, NSGs, Private Endpoints, Entra ID), Microsoft 365
 - **GRC:** ISO 27001, NIST, GDPR, OneTrust
 - **Certs:** SSCP, CEH (EC-Council), CompTIA Network+, Project+, A+, Secure Infrastructure Specialist
 
-### How I work
+### **How I work**
 
-Design document first. Implementation plan paired with the design. Code paired with the plan. Each commit closes a named problem. The discipline is the part I am strictest about.
+Securing the infrastructure starts where the threat actually lives. Continuous threat hunting across EDR, DLP, identity, network, and cloud telemetry. Detection rules tuned to what the business actually does, not what the catalog says it might. IAM and PAM administration that keeps the access map tight — quarterly access reviews, privileged sessions logged and re-checkable, irregular authentication investigated, not just alerted on. Cloud posture work on Azure App Service and AWS that closes the gap between what the platform allows and what the business should permit.
+
+Proactive work runs alongside the day-to-day, not as an annual event. Breach-and-attack simulations validate that the detections in place still catch what they were designed to catch. Pen tests and vulnerability assessments turn into remediation tickets with owners and dates, not PDFs that get filed. Third-party risk reviews carry the same weight: every vendor either passes the bar or gets a documented exception with an expiry. ISO 27001, NIST, and GDPR evidence is a byproduct of how the controls run, not a scramble before an audit window.
+
+Security meets the business where it is. Engineering ships faster when they are not blocked by the security team, so guardrails live in CI/CD, OWASP-aligned (including the LLM top ten), and visible before the merge button. Audit and legal get evidence on demand because the controls were instrumented to produce it. Risk decisions are made by the business with the security context they need, not made by the security team alone.
+
+Strategically, the work bends toward fewer hours per investigation, fewer manual touches per audit, and a smaller blast radius per incident. Every automation, every agent, every design doc is graded against those three. The discipline is the part I am strictest about.

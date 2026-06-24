@@ -10,10 +10,10 @@ export default function Home() {
         $ whoami<span className="cursor-blink text-accent-dark">▍</span>
       </div>
       <h1 className="text-3xl font-medium text-text-dark leading-tight mb-5 max-w-prose">
-        Security engineer in Columbus, Ohio. I run the day job — threat hunting, IAM, third-party risk assessment — and build the tooling that closes the gap between alert and action.
+        Security engineer in Columbus, Ohio. I run the day job — threat hunting, IAM, third-party risk assessment — and build the internal apps and workflow scripts that close the gap between alert and action.
       </h1>
       <p className="text-sm text-text-dark-dim leading-relaxed max-w-prose">
-        Detection and threat hunting across EDR, DLP, identity, and cloud telemetry. IAM and PAM administration against CyberArk. Cloud security across AWS, Azure, and M365. Application security and OWASP guardrails — including the LLM top ten. Penetration testing and vulnerability assessment. Vendor and third-party risk assessment. And the tooling that ties it together: multi-agent LLM pipelines for compliance, IOC enrichment for SOCs, identity automation, and risk management at scale.
+        Detection and threat hunting across EDR, DLP, identity, and cloud telemetry. IAM and PAM administration. Cloud security: Azure App Service hardening (Managed Identities, Key Vault, Private Endpoints, Defender) and AWS posture (IAM, S3, KMS, GuardDuty, CloudTrail), plus M365. Application security and OWASP guardrails — including the LLM top ten. Penetration testing and vulnerability assessment. Vendor and third-party risk assessment. And the internal apps and workflow scripts that tie it together: multi-agent LLM pipelines for compliance, IOC enrichment for SOCs, identity automation, and risk management at scale.
       </p>
 
       <section className="mt-20 border-t border-border-dark pt-10">
