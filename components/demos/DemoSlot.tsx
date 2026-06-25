@@ -4,6 +4,7 @@ import MailIocDemo from '@/components/demos/mail-ioc-scanner'
 import EventPlannerDemo from '@/components/demos/event-planner'
 import CyberArkDemo from '@/components/demos/cyberark-sdk'
 import AzureSecureDesignDemo from '@/components/demos/azure-web-app-secure-design'
+import CrowdStrikeTagSyncDemo from '@/components/demos/crowdstrike-tag-sync'
 
 interface Props { slug: string }
 
@@ -14,6 +15,7 @@ const demos: Record<string, () => React.ReactElement> = {
   'event-planner': () => <EventPlannerDemo />,
   'cyberark-sdk': () => <CyberArkDemo />,
   'azure-web-app-secure-design': () => <AzureSecureDesignDemo />,
+  'crowdstrike-tag-sync': () => <CrowdStrikeTagSyncDemo />,
 }
 
 export function DemoSlot({ slug }: Props) {

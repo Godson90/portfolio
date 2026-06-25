@@ -9,6 +9,7 @@ const loaderMap: Record<string, () => Promise<MdxModule>> = {
   'event-planner':    () => import('@/content/work/event-planner.mdx'),
   'cyberark-sdk':     () => import('@/content/work/cyberark-sdk.mdx'),
   'azure-web-app-secure-design': () => import('@/content/work/azure-web-app-secure-design.mdx'),
+  'crowdstrike-tag-sync': () => import('@/content/work/crowdstrike-tag-sync.mdx'),
 }
 
 export async function MdxBody({ slug }: { slug: string }) {

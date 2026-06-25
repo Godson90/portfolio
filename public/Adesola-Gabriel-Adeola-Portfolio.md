@@ -421,3 +421,69 @@ What good looks like, in five lines: defense in depth — Front Door, WAF, NSGs,
 The deck itself is the artifact: a single document a stakeholder can read and a sequence an engineer can implement against, mapped to controls every auditor recognizes. [Download the presentation.](/Azure_Web_App_Secure_Design_Presentation.pptx)
 
 ---
+
+## CrowdStrike Falcon Tag Sync
+*#07 · 2025 · Solo engineer*
+_Active Directory ↔ Falcon device-tag reconciliation that drives patching cadence and DLP policy assignment._
+
+### Problem
+
+CrowdStrike Falcon uses grouping tags to decide which devices get which policies — patching wave (test, pilot, prod week 1, prod week 2, etc.), DLP removable-media allow lists, and a few other one-off controls. The source of truth for which device belongs in which wave is Active Directory, where the patching team manages SCCM membership. The two systems do not talk to each other.
+
+The naive answer is "have someone tag each device by hand." That fails the moment a server moves between waves, gets retired, gets rebuilt, or gets added to the DLP allow list. Falcon ends up applying yesterday's policy to today's server. The job needed automation, and the automation needed to be idempotent — running it twice in a row should be a no-op.
+
+### Approach
+
+A scheduled Python tool that walks each AD group, resolves every member to a Falcon device ID, reads the current tag set, and converges Falcon toward AD. One direction by default — AD wins. For the DLP removable-media allow list, the converse is also enforced: a device that leaves the AD allow group has its Falcon tag removed automatically.
+
+The dispatcher runs the per-wave passes concurrently with staggered start delays via `asyncio.gather`, so a slow API call in one wave does not stall the others. The whole reconciliation completes in minutes against thousands of servers.
+
+Every pass is idempotent. A device that already carries the right tag emits an `INFO` line and nothing else. A device missing the tag gets a single PATCH. A device that has drifted out of the source AD group has its tag removed. The tool can be run on-demand, on cron, or after a one-off AD-group edit — same outcome.
+
+A nightly log scanner watches the day's logfile for `ERROR` lines and emails the security ops alias if anything accumulated. The script is the visible operator UI: there is no dashboard.
+
+### Hard problems
+
+#### Two source systems with two auth models
+
+Active Directory wants a domain-joined session and answers via PowerShell (`Get-ADGroupMember -Recursive`). Falcon wants OAuth2 client credentials and answers via REST. Neither is willing to talk to the other.
+
+The Python tool bridges them. AD queries shell out to PowerShell via `subprocess.run`, parse the `SamAccountName` lines, and strip the trailing `$` from machine accounts. Falcon calls go through a client class that mints a fresh bearer token on construction, reuses it across the methods on that instance, and treats the token as read-only thereafter. Each surface has its own retry shape — PowerShell errors propagate as `stderr`; Falcon errors come back as HTTP codes that need class-by-class handling (`401` reauths, `429` backs off, `5xx` retries with jitter).
+
+The interface above both is one method: `get_ad_group_members(group)` and `get_device_agent_id(hostname)` — symmetric shapes so the reconciliation loop never has to know which side of the bridge it is reading from.
+
+#### Idempotency without a state file
+
+The naive idempotency check is "remember what we did last run." Adding a state file just creates a new source of truth that can drift from both AD and Falcon. So the tool does not keep one. Idempotency comes from reading current state on every pass: pull the device's tags from Falcon, compare against the desired tag, PATCH only if absent. Tag removal works the same way in reverse — pull the Falcon host-group membership for "Removable Media Allow", subtract the AD group, PATCH-remove on the difference.
+
+Two consequences: every pass is safe to interrupt and re-run; and the tool will eventually correct manual changes someone made in the Falcon console, which is exactly what the security team wants from a reconciliation loop.
+
+#### Concurrency without losing the log thread
+
+Running seven AD-group passes concurrently means the structured log file becomes a tangle of interleaved lines if you are not careful. The fix is small: every log line carries the wave name and the hostname, and the logger is configured to flush per-record so a long pass on `ServerPatchProd4` never holds up the visibility into `ServerPatchTest`.
+
+The `run.py` dispatcher staggers start times (`asyncio.sleep` of 0–10 seconds across the seven passes) so the initial burst of token mints and AD queries does not all hit at second zero. The total wall-clock cost is unchanged; the API providers stay happier.
+
+#### Failures that should not look like silence
+
+A `Get-ADGroupMember` against a non-existent group returns empty stdout and exit code 0. A Falcon search for a hostname that was decommissioned yesterday returns a 200 with an empty `resources` array. Neither is an error to the API; both are operationally interesting.
+
+So the tool logs at the right granularity. Every host that gets a tag added logs `INFO` with the tag name. Every host already carrying the tag logs `INFO` with "has a tag applied." Empty group responses log `WARNING` with the group name. Anything that throws — token refresh failure, PowerShell exit non-zero, JSON parse error — logs `ERROR` with the exception. The nightly mailer keys off that `ERROR` level only, so the inbox stays signal.
+
+### Stack
+
+- **Runtime:** Python 3.10+, `asyncio` for concurrent wave dispatch
+- **HTTP:** `requests` with explicit timeouts; `urllib3` warnings suppressed because corporate-CA-signed endpoints are validated out of band
+- **Falcon API:** OAuth2 client credentials against the regional API, device search via `/devices/queries/devices-scroll/v1`, tag mutation via PATCH on `/devices/entities/devices/tags/v1`, host-group reads via `/devices/queries/host-group-members/v1`
+- **Active Directory:** PowerShell `Get-ADGroupMember -Recursive` shell-out with `SamAccountName` parsing
+- **Scheduling:** Windows Task Scheduler on a domain-joined host (so the AD query runs in the right session context)
+- **Secrets:** `client_id` from the host environment; `client_secret` retrieved at runtime from a separate helper module that reads it from a protected store, never present on disk in plaintext
+- **Observability:** structured logging to a dated logfile per run; nightly scanner emails on `ERROR` accumulation
+
+### Outcomes
+
+Runs nightly against every patching wave plus the DLP allow list. A new server added to the right SCCM group during the day is tagged in Falcon before the next morning's patch window. A server moved to a different wave is re-tagged on the next pass. A device that drops out of the DLP allow group loses its removable-media exception within hours — closing a window where someone could keep writing to USB after they were removed from the access list.
+
+The script disappears into the wall calendar. Operators add or remove from AD; Falcon catches up; policies follow. Nobody opens the Falcon console to manage tags anymore. That is the whole point.
+
+---
